@@ -1,3 +1,4 @@
+using PriceChecker.Database;
 using PriceChecker.Services;
 
 namespace PriceChecker;
@@ -13,7 +14,7 @@ public static class BitcoinPriceV1
                 "Provide API Endpoint to request the aggregated bitcoin price at a specific time point with hour accuracy.";
             return op;
         });
-        group.MapGet("/persisted/{start:datetime}/{end:datetime}", GetPersisted).WithOpenApi(op =>
+        group.MapGet("/persisted", GetPersisted).WithOpenApi(op =>
         {
             op.OperationId = "Persisted";
             op.Description =
@@ -23,24 +24,55 @@ public static class BitcoinPriceV1
         return group;
     }
 
-    private static async Task<IResult> GetAggregated(DateOnly date, int hour, CancellationToken cancellationToken, IEnumerable<IPriceService> priceServices)
+    private static async Task<IResult> GetAggregated(DateOnly date, int hour, CancellationToken cancellationToken,
+        IEnumerable<IPriceService> priceServices, PriceDb db)
     {
-        var finalDateTime = date.ToDateTime(new TimeOnly(hour,0));
+        var finalDateTime = date.ToDateTime(new TimeOnly(hour, 0));
+        var aggregatedPrice = GetPriceFromDb(finalDateTime, db);
+        if (aggregatedPrice == null)
+        {
+            aggregatedPrice = await AggregatePrices(finalDateTime, cancellationToken, priceServices);
+            if (aggregatedPrice == null)
+            {
+                return Results.Problem("Error while getting the price");
+            }
+            await PersistResult(finalDateTime, (double)aggregatedPrice, cancellationToken, db);
+        }
+
+        return Results.Ok(aggregatedPrice);
+    }
+
+    private static double? GetPriceFromDb(DateTime finalDateTime, PriceDb db)
+    {
+        return db.Prices.FirstOrDefault(p => p.DateId == finalDateTime)?.Close;
+    }
+
+    private static async Task PersistResult(DateTime date, double aggregatedPrice, CancellationToken cancellationToken,
+        PriceDb db)
+    {
+        var newPrice = new Price { DateId = date, Name = "BTC/USD", Close = aggregatedPrice };
+        db.Prices.Add(newPrice);
+        await db.SaveChangesAsync(cancellationToken);
+    }
+
+    private static async Task<double?> AggregatePrices(DateTime date, CancellationToken cancellationToken,
+        IEnumerable<IPriceService> priceServices)
+    {
         List<Task<double>> tasks = new List<Task<double>>();
         foreach (var priceService in priceServices)
         {
-            tasks.Add(priceService.GetPrice(finalDateTime, cancellationToken));
+            tasks.Add(priceService.GetPrice(date, cancellationToken));
         }
 
         var results = await Task.WhenAll(tasks);
 
         double finalResult = results.Sum() / results.Length;
-
-        return Results.Ok(finalResult);
+        return finalResult;
     }
 
-    private static IResult GetPersisted(DateTime start, DateTime end)
+    private static IResult GetPersisted(DateTime start, DateTime end, PriceDb db)
     {
-        return Results.Ok(15);
+        var list = db.Prices.Where(p => p.DateId >= start && p.DateId <= end).ToList();
+        return Results.Ok(list);
     }
 }
