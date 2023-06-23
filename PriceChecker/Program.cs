@@ -1,7 +1,11 @@
+using Microsoft.EntityFrameworkCore;
 using PriceChecker;
+using PriceChecker.Database;
 using PriceChecker.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddDbContext<PriceDb>(opt => opt.UseInMemoryDatabase("PriceDb"));
 
 builder.Services.AddHttpClient<IPriceService, BitstampService>("Bitstamp",
     client => { client.BaseAddress = new Uri("https://www.bitstamp.net");});
