@@ -1,7 +1,12 @@
 using PriceChecker;
+using PriceChecker.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddHttpClient<IPriceService, BitstampService>("Bitstamp",
+    client => { client.BaseAddress = new Uri("https://www.bitstamp.net");});
+builder.Services.AddHttpClient<IPriceService, BitfinexService>("Bitfinex",
+    client => { client.BaseAddress = new Uri("https://api-pub.bitfinex.com");});
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
