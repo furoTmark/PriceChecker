@@ -1,3 +1,5 @@
+using PriceChecker;
+
 var builder = WebApplication.CreateBuilder(args);
 
 
@@ -11,5 +13,6 @@ app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
 
+app.MapGroup("/BitcoinPrice/v1").MapBitcoinPriceV1().WithOpenApi().WithTags("Bitcoin Price Checker");
 
 app.Run();
