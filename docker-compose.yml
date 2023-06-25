@@ -1,0 +1,12 @@
+version: "3.4"
+
+services:
+  price-checker:
+    image: ${DOCKER_REGISTRY-}price-checker
+    build:
+      context: .
+      dockerfile: PriceChecker/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+    ports:
+      - "8008:80"

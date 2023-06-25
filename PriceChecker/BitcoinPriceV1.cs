@@ -7,7 +7,7 @@ public static class BitcoinPriceV1
 {
     public static RouteGroupBuilder MapBitcoinPriceV1(this RouteGroupBuilder group)
     {
-        group.MapGet("/aggregated/{date:datetime}/{hour:range(0,24)}", GetAggregated).WithOpenApi(op =>
+        group.MapGet("/aggregated/{date:datetime}/{hour:range(0,23)}", GetAggregated).WithOpenApi(op =>
         {
             op.OperationId = "Aggregated";
             op.Description =
@@ -72,7 +72,7 @@ public static class BitcoinPriceV1
 
     private static IResult GetPersisted(DateTime start, DateTime end, PriceDb db)
     {
-        var list = db.Prices.Where(p => p.DateId >= start && p.DateId <= end).ToList();
+        var list = db.Prices.Where(p => p.DateId >= start && p.DateId <= end).OrderBy(p => p.DateId).ToList();
         return Results.Ok(list);
     }
 }

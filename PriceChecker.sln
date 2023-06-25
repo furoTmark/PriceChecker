@@ -1,5 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{46675362-C434-4707-ADB0-AB8F843D1FC7}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+		docker-compose.yml = docker-compose.yml
+	EndProjectSection
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PriceChecker", "PriceChecker\PriceChecker.csproj", "{9CDA3EDB-10BD-4B35-A565-736B7EB8C33F}"
 EndProject
 Global

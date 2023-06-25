@@ -20,8 +20,6 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI();
 
-app.UseHttpsRedirection();
-
 app.MapGroup("/BitcoinPrice/v1").MapBitcoinPriceV1().WithOpenApi().WithTags("Bitcoin Price Checker");
 
 app.Run();
