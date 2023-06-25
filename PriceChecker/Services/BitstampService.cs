@@ -11,20 +11,28 @@ public class BitstampService : IPriceService
         _client = client;
     }
 
-    public async Task<double> GetPrice(DateTime timestamp, CancellationToken cancellationToken)
+    public async Task<double?> GetPrice(DateTime timestamp, CancellationToken cancellationToken)
     {
         long unixTime = ((DateTimeOffset)timestamp).ToUnixTimeSeconds();
-        var response = await _client.GetAsync($"/api/v2/ohlc/btcusd/?step=3600&limit=1&start={unixTime}", cancellationToken);
-        if (response.IsSuccessStatusCode)
+
+        try
         {
-            var data = await response.Content.ReadFromJsonAsync<OhlcRoot>(cancellationToken: cancellationToken);
-            var ohlc = data?.Data.Ohlc?.FirstOrDefault();
-            if (ohlc != null)
+            var response = await _client.GetAsync($"/api/v2/ohlc/btcusd/?step=3600&limit=1&start={unixTime}", cancellationToken);
+            if (response.IsSuccessStatusCode)
             {
-                return ohlc.Close;
+                var data = await response.Content.ReadFromJsonAsync<OhlcRoot>(cancellationToken: cancellationToken);
+                var ohlc = data?.Data.Ohlc?.FirstOrDefault();
+                if (ohlc != null)
+                {
+                    return ohlc.Close;
+                }
             }
         }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+        }
 
-        return -1;
+        return null;
     }
 }

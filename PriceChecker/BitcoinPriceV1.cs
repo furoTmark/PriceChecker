@@ -80,15 +80,16 @@ public static class BitcoinPriceV1
     private static async Task<double?> AggregatePrices(DateTime date, CancellationToken cancellationToken,
         IEnumerable<IPriceService> priceServices)
     {
-        List<Task<double>> tasks = new List<Task<double>>();
+        var tasks = new List<Task<double?>>();
         foreach (var priceService in priceServices)
         {
             tasks.Add(priceService.GetPrice(date, cancellationToken));
         }
 
         var results = await Task.WhenAll(tasks);
+        var goodResults = results.Where(x => x.HasValue).Select(x => x!.Value).ToList();
 
-        double finalResult = results.Sum() / results.Length;
+        double finalResult = goodResults.Sum() / goodResults.Count;
         return finalResult;
     }
 }

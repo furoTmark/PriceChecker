@@ -10,21 +10,28 @@ public class BitfinexService : IPriceService
         _client = client;
     }
 
-    public async Task<double> GetPrice(DateTime timestamp, CancellationToken cancellationToken)
+    public async Task<double?> GetPrice(DateTime timestamp, CancellationToken cancellationToken)
     {
         var startTime = ((DateTimeOffset)timestamp).ToUnixTimeMilliseconds();
         var endTime = startTime + HourMilliseconds;
 
-        var response = await _client.GetAsync($"/v2/candles/trade:1h:tBTCUSD/hist?start={startTime}&end={endTime}&limit=1", cancellationToken);
-        if (response.IsSuccessStatusCode)
+        try
         {
-            var data = await response.Content.ReadFromJsonAsync<List<List<double>>>(cancellationToken: cancellationToken);
-            if (data?.FirstOrDefault() != null)
+            var response = await _client.GetAsync($"/v2/candles/trade:1h:tBTCUSD/hist?start={startTime}&end={endTime}&limit=1", cancellationToken);
+            if (response.IsSuccessStatusCode)
             {
-                return data.FirstOrDefault()![2];
+                var data = await response.Content.ReadFromJsonAsync<List<List<double>>>(cancellationToken: cancellationToken);
+                if (data?.FirstOrDefault() != null)
+                {
+                    return data.FirstOrDefault()![2];
+                }
             }
         }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+        }
 
-        return -1;
+        return null;
     }
 }
