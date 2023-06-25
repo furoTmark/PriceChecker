@@ -2,6 +2,8 @@
 
 Test app for Faptic Technologies
 
+App is deployed and accessible on the cloud: https://pricecheckerfaptic.azurewebsites.net/swagger/index.html
+
 In order to start, navigate to the root folder and perform the following command:  
 * Build docker images
 ```
