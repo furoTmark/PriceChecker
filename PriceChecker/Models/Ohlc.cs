@@ -2,13 +2,13 @@ namespace PriceChecker.Models;
 
 public class OhlcRoot
 {
-    public OhlcData Data { get; set; }
+    public OhlcData Data { get; set; } = null!;
 }
 
 public class OhlcData
 {
     public List<Ohlc>? Ohlc { get; set; }
-    public string Pair { get; set; }
+    public string Pair { get; set; } = null!;
 }
 
 public class Ohlc

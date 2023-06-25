@@ -16,8 +16,16 @@ public static class BitcoinPriceV1
                 "Provide API Endpoint to request the aggregated bitcoin price at a specific time point with hour accuracy.";
             op.Parameters = new List<OpenApiParameter>
             {
-                new OpenApiParameter { Name = "date", Description = "Date", Required = true, Example = new OpenApiString("2023-06-23"), In = ParameterLocation.Path},
-                new OpenApiParameter { Name = "hour", Description = "Hour", Required = true, Example = new OpenApiString("14"), In = ParameterLocation.Path}
+                new OpenApiParameter
+                {
+                    Name = "date", Description = "Date", Required = true, Example = new OpenApiString("2023-06-23"),
+                    In = ParameterLocation.Path
+                },
+                new OpenApiParameter
+                {
+                    Name = "hour", Description = "Hour", Required = true, Example = new OpenApiString("14"),
+                    In = ParameterLocation.Path
+                }
             };
             return op;
         });
@@ -28,8 +36,16 @@ public static class BitcoinPriceV1
                 "Provide API Endpoint that fetches the persisted bitcoin prices from the datastore during a user-specified time range.";
             op.Parameters = new List<OpenApiParameter>
             {
-                new OpenApiParameter { Name = "start", Description = "Start time range", Required = true, Example = new OpenApiString("2023-06-23 00:00"), In = ParameterLocation.Query},
-                new OpenApiParameter { Name = "end", Description = "End time range", Required = true, Example = new OpenApiString("2023-06-23 23:00"), In = ParameterLocation.Query}
+                new OpenApiParameter
+                {
+                    Name = "start", Description = "Start time range", Required = true,
+                    Example = new OpenApiString("2023-06-23 00:00"), In = ParameterLocation.Query
+                },
+                new OpenApiParameter
+                {
+                    Name = "end", Description = "End time range", Required = true,
+                    Example = new OpenApiString("2023-06-23 23:00"), In = ParameterLocation.Query
+                }
             };
             return op;
         });
@@ -37,10 +53,10 @@ public static class BitcoinPriceV1
     }
 
     private static async Task<IResult> GetAggregated(DateOnly date, int hour, CancellationToken cancellationToken,
-        IEnumerable<IPriceService> priceServices, PriceDb db)
+        IEnumerable<IPriceService> priceServices, IPriceManager priceManager)
     {
         var finalDateTime = date.ToDateTime(new TimeOnly(hour, 0));
-        var aggregatedPrice = GetPriceFromDb(finalDateTime, db);
+        var aggregatedPrice = priceManager.GetPrice(finalDateTime);
         if (aggregatedPrice == null)
         {
             aggregatedPrice = await AggregatePrices(finalDateTime, cancellationToken, priceServices);
@@ -49,23 +65,16 @@ public static class BitcoinPriceV1
                 return Results.Problem("Error while getting the price");
             }
 
-            await PersistResult(finalDateTime, (double)aggregatedPrice, cancellationToken, db);
+            await priceManager.PersistPrice(finalDateTime, (double)aggregatedPrice, cancellationToken);
         }
 
         return Results.Ok(aggregatedPrice);
     }
 
-    private static double? GetPriceFromDb(DateTime finalDateTime, PriceDb db)
+    private static IResult GetPersisted(DateTime start, DateTime end, IPriceManager priceManager)
     {
-        return db.Prices.FirstOrDefault(p => p.DateId == finalDateTime)?.Close;
-    }
-
-    private static async Task PersistResult(DateTime date, double aggregatedPrice, CancellationToken cancellationToken,
-        PriceDb db)
-    {
-        var newPrice = new Price { DateId = date, Name = "BTC/USD", Close = aggregatedPrice };
-        db.Prices.Add(newPrice);
-        await db.SaveChangesAsync(cancellationToken);
+        var list = priceManager.GetPrices(start, end);
+        return Results.Ok(list);
     }
 
     private static async Task<double?> AggregatePrices(DateTime date, CancellationToken cancellationToken,
@@ -81,11 +90,5 @@ public static class BitcoinPriceV1
 
         double finalResult = results.Sum() / results.Length;
         return finalResult;
-    }
-
-    private static IResult GetPersisted(DateTime start, DateTime end, PriceDb db)
-    {
-        var list = db.Prices.Where(p => p.DateId >= start && p.DateId <= end).OrderBy(p => p.DateId).ToList();
-        return Results.Ok(list);
     }
 }
