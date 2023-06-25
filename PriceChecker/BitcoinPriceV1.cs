@@ -1,3 +1,5 @@
+using Microsoft.OpenApi.Any;
+using Microsoft.OpenApi.Models;
 using PriceChecker.Database;
 using PriceChecker.Services;
 
@@ -12,6 +14,11 @@ public static class BitcoinPriceV1
             op.OperationId = "Aggregated";
             op.Description =
                 "Provide API Endpoint to request the aggregated bitcoin price at a specific time point with hour accuracy.";
+            op.Parameters = new List<OpenApiParameter>
+            {
+                new OpenApiParameter { Name = "date", Description = "Date", Required = true, Example = new OpenApiString("2023-06-23"), In = ParameterLocation.Path},
+                new OpenApiParameter { Name = "hour", Description = "Hour", Required = true, Example = new OpenApiString("14"), In = ParameterLocation.Path}
+            };
             return op;
         });
         group.MapGet("/persisted", GetPersisted).WithOpenApi(op =>
@@ -19,6 +26,11 @@ public static class BitcoinPriceV1
             op.OperationId = "Persisted";
             op.Description =
                 "Provide API Endpoint that fetches the persisted bitcoin prices from the datastore during a user-specified time range.";
+            op.Parameters = new List<OpenApiParameter>
+            {
+                new OpenApiParameter { Name = "start", Description = "Start time range", Required = true, Example = new OpenApiString("2023-06-23 00:00"), In = ParameterLocation.Query},
+                new OpenApiParameter { Name = "end", Description = "End time range", Required = true, Example = new OpenApiString("2023-06-23 23:00"), In = ParameterLocation.Query}
+            };
             return op;
         });
         return group;
@@ -36,6 +48,7 @@ public static class BitcoinPriceV1
             {
                 return Results.Problem("Error while getting the price");
             }
+
             await PersistResult(finalDateTime, (double)aggregatedPrice, cancellationToken, db);
         }
 

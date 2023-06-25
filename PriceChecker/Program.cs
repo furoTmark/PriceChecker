@@ -8,9 +8,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<PriceDb>(opt => opt.UseInMemoryDatabase("PriceDb"));
 
 builder.Services.AddHttpClient<IPriceService, BitstampService>("Bitstamp",
-    client => { client.BaseAddress = new Uri("https://www.bitstamp.net");});
+    client => { client.BaseAddress = new Uri(builder.Configuration["BitstampBaseAddress"]!);});
 builder.Services.AddHttpClient<IPriceService, BitfinexService>("Bitfinex",
-    client => { client.BaseAddress = new Uri("https://api-pub.bitfinex.com");});
+    client => { client.BaseAddress = new Uri(builder.Configuration["BitfinexBaseAddress"]!);});
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
